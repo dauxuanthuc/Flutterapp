@@ -12,8 +12,10 @@ import '../models/product_model.dart';
 import '../models/category_model.dart';
 import 'add_product_view.dart';
 import 'category_view.dart';
-import 'checkout_view.dart';
-import 'invoice_list_view.dart';
+import 'checkout_view.dart'; // Import Checkout
+import 'invoice_list_view.dart'; // Import Invoice List
+import 'stats_view.dart'; // Import Stats
+import 'login_view.dart'; // Import Login View
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -49,10 +51,16 @@ class _HomeViewState extends State<HomeView> {
       final product = await controller.getProductByBarcode(res);
 
       if (product != null && mounted) {
-         Navigator.push(context, MaterialPageRoute(builder: (_) => AddProductView(product: product)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => AddProductView(product: product)),
+        );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Không tìm thấy SP mã: $res"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text("Không tìm thấy SP mã: $res"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -86,29 +94,60 @@ class _HomeViewState extends State<HomeView> {
             onPressed: _scanToSearch,
           ),
           IconButton(
-            tooltip: "Bán hàng",
-            icon: const Icon(Icons.shopping_cart, color: Colors.green),
+            tooltip: "Thống kê",
+            icon: const Icon(Icons.pie_chart, color: Colors.orange),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const CheckoutView()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const StatsView()),
+              );
             },
           ),
           IconButton(
-  tooltip: "Lịch sử đơn",
-  icon: const Icon(Icons.receipt_long),
-  onPressed: () {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const InvoiceListView()));
-  },
-),
+            tooltip: "Bán hàng",
+            icon: const Icon(Icons.shopping_cart, color: Colors.green),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CheckoutView()),
+              );
+            },
+          ),
+          IconButton(
+            tooltip: "Lịch sử đơn",
+            icon: const Icon(Icons.receipt_long),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const InvoiceListView()),
+              );
+            },
+          ),
           IconButton(
             tooltip: "Danh mục",
             icon: const Icon(Icons.category),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryView())),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CategoryView()),
+            ),
           ),
           IconButton(
             tooltip: "Đăng xuất",
             icon: const Icon(Icons.logout),
-            onPressed: () => context.read<AuthController>().logout(),
-          )
+            onPressed: () async {
+              // 1. Gọi lệnh đăng xuất Firebase
+              await context.read<AuthController>().logout();
+
+              // 2. Xóa sạch lịch sử màn hình và Đẩy về LoginView
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginView()),
+                  (route) =>
+                      false, // Điều kiện false nghĩa là xóa hết các trang trước đó
+                );
+              }
+            },
+          ),
         ],
       ),
       body: Column(
@@ -126,18 +165,22 @@ class _HomeViewState extends State<HomeView> {
 
                 return ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 10,
+                  ),
                   itemCount: displayCats.length,
                   itemBuilder: (context, index) {
                     final catName = displayCats[index];
                     final isSelected = _filterCategory == catName;
-                    
+
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: ChoiceChip(
                         label: Text(catName),
                         selected: isSelected,
-                        onSelected: (selected) => setState(() => _filterCategory = catName),
+                        onSelected: (selected) =>
+                            setState(() => _filterCategory = catName),
                       ),
                     );
                   },
@@ -145,7 +188,7 @@ class _HomeViewState extends State<HomeView> {
               },
             ),
           ),
-          
+
           // 3. Product Grid
           Expanded(
             child: StreamBuilder(
@@ -154,14 +197,17 @@ class _HomeViewState extends State<HomeView> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                
+
                 // Error Handling (Specifically for Index Error)
                 if (snapshot.hasError) {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(20),
-                      child: Text("Lỗi tải dữ liệu (Có thể thiếu Index): ${snapshot.error}", 
-                        style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+                      child: Text(
+                        "Lỗi tải dữ liệu (Có thể thiếu Index): ${snapshot.error}",
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   );
                 }
@@ -171,9 +217,16 @@ class _HomeViewState extends State<HomeView> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.inventory_2_outlined, size: 60, color: Colors.grey),
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 60,
+                          color: Colors.grey,
+                        ),
                         SizedBox(height: 10),
-                        Text("Chưa có sản phẩm nào", style: TextStyle(color: Colors.grey)),
+                        Text(
+                          "Chưa có sản phẩm nào",
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   );
@@ -190,10 +243,18 @@ class _HomeViewState extends State<HomeView> {
                   itemCount: snapshot.data!.docs.length,
                   itemBuilder: (context, index) {
                     var doc = snapshot.data!.docs[index];
-                    ProductModel product = ProductModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+                    ProductModel product = ProductModel.fromMap(
+                      doc.data() as Map<String, dynamic>,
+                      doc.id,
+                    );
 
                     return GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddProductView(product: product))),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AddProductView(product: product),
+                        ),
+                      ),
                       child: Card(
                         elevation: 3,
                         child: Column(
@@ -202,11 +263,26 @@ class _HomeViewState extends State<HomeView> {
                             // Product Image
                             Expanded(
                               child: ClipRRect(
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(10),
+                                ),
                                 child: product.imageUrl.isNotEmpty
-                                    ? Image.network(product.imageUrl, width: double.infinity, fit: BoxFit.cover,
-                                        errorBuilder: (c,e,s) => Container(color: Colors.grey[200], child: const Icon(Icons.broken_image)))
-                                    : Container(color: Colors.grey[200], child: const Icon(Icons.image, size: 40)),
+                                    ? Image.network(
+                                        product.imageUrl,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (c, e, s) => Container(
+                                          color: Colors.grey[200],
+                                          child: const Icon(Icons.broken_image),
+                                        ),
+                                      )
+                                    : Container(
+                                        color: Colors.grey[200],
+                                        child: const Icon(
+                                          Icons.image,
+                                          size: 40,
+                                        ),
+                                      ),
                               ),
                             ),
                             // Details
@@ -215,29 +291,74 @@ class _HomeViewState extends State<HomeView> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                  Text(formatCurrency(product.sellPrice), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                  Text(
+                                    product.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    formatCurrency(product.sellPrice),
+                                    style: const TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   const SizedBox(height: 4),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text("Kho: ${product.stock}", style: const TextStyle(fontSize: 12)),
+                                      Text(
+                                        "Kho: ${product.stock}",
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
                                       InkWell(
                                         onTap: () {
-                                           showDialog(context: context, builder: (ctx) => AlertDialog(
-                                             title: const Text("Xóa?"),
-                                             content: Text("Xóa ${product.name}?"),
-                                             actions: [
-                                               TextButton(onPressed: ()=>Navigator.pop(ctx), child: const Text("Hủy")),
-                                               TextButton(onPressed: (){
-                                                 context.read<ProductController>().deleteProduct(product.id!);
-                                                 Navigator.pop(ctx);
-                                               }, child: const Text("Xóa", style: TextStyle(color: Colors.red))),
-                                             ],
-                                           ));
+                                          showDialog(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              title: const Text("Xóa?"),
+                                              content: Text(
+                                                "Xóa ${product.name}?",
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(ctx),
+                                                  child: const Text("Hủy"),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () {
+                                                    context
+                                                        .read<
+                                                          ProductController
+                                                        >()
+                                                        .deleteProduct(
+                                                          product.id!,
+                                                        );
+                                                    Navigator.pop(ctx);
+                                                  },
+                                                  child: const Text(
+                                                    "Xóa",
+                                                    style: TextStyle(
+                                                      color: Colors.red,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
                                         },
-                                        child: const Icon(Icons.delete_outline, color: Colors.red, size: 20)
-                                      )
+                                        child: const Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.red,
+                                          size: 20,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -255,7 +376,10 @@ class _HomeViewState extends State<HomeView> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddProductView())),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AddProductView()),
+        ),
         child: const Icon(Icons.add),
       ),
     );

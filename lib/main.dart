@@ -3,15 +3,23 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
+
+// Import Controllers
 import 'controllers/product_controller.dart';
 import 'controllers/category_controller.dart';
 import 'controllers/cart_controller.dart';
-import 'services/notification_service.dart';
-// Import các file MVC
+import 'controllers/stats_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/order_controller.dart';
+
+// Import Services
+import 'services/notification_service.dart';
+
+// Import Views
 import 'views/login_view.dart';
 import 'views/home_view.dart';
+import 'views/biometric_lock_view.dart';
+import 'views/auth_wrapper.dart'; // ✅ Đã import file này thì không viết class ở dưới nữa
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +33,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // MultiProvider giúp tiêm (inject) Controller vào cây Widget
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthController()),
@@ -33,37 +40,16 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CategoryController()),
         ChangeNotifierProvider(create: (_) => CartController()),
         ChangeNotifierProvider(create: (_) => OrderController()),
+        ChangeNotifierProvider(create: (_) => StatsController()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'MVC Auth Project',
         theme: ThemeData(primarySwatch: Colors.blue),
-        home: const AuthWrapper(),
+        
+        // Gọi AuthWrapper từ file 'views/auth_wrapper.dart'
+        home: const AuthWrapper(), 
       ),
-    );
-  }
-}
-
-// AuthWrapper: Widget thông minh tự kiểm tra xem đang login hay chưa
-class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        // Đang chờ kết nối
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        // Nếu có dữ liệu user -> Vào trang chủ
-        if (snapshot.hasData) {
-          return const HomeView();
-        }
-        // Nếu không -> Vào trang đăng nhập
-        return const LoginView();
-      },
     );
   }
 }
