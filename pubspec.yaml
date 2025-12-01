@@ -43,6 +43,7 @@ dependencies:
   simple_barcode_scanner: ^0.4.0
   pdf: ^3.11.3
   printing: ^5.14.2
+  flutter_local_notifications: ^19.5.0
 
 dev_dependencies:
   flutter_test:

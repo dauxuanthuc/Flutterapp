@@ -6,7 +6,7 @@ import 'firebase_options.dart';
 import 'controllers/product_controller.dart';
 import 'controllers/category_controller.dart';
 import 'controllers/cart_controller.dart';
-
+import 'services/notification_service.dart';
 // Import các file MVC
 import 'controllers/auth_controller.dart';
 import 'controllers/order_controller.dart';
@@ -16,6 +16,7 @@ import 'views/home_view.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService.initialize();
   runApp(const MyApp());
 }
 

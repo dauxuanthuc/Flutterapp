@@ -3,12 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/product_model.dart';
 import '../models/cart_item_model.dart';
+import '../services/notification_service.dart';
 
 class CartController extends ChangeNotifier {
   // Danh sách hàng trong giỏ
   final Map<String, CartItemModel> _items = {};
 
   Map<String, CartItemModel> get items => _items;
+
+  // Biến trạng thái để hiện vòng xoay khi đang thanh toán
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
 
   // Tổng số lượng sản phẩm
   int get itemCount => _items.length;
@@ -22,10 +27,9 @@ class CartController extends ChangeNotifier {
     return total;
   }
 
-  // 1. THÊM VÀO GIỎ (Quét mã hoặc chọn tay đều gọi hàm này)
+  // 1. THÊM VÀO GIỎ
   void addToCart(ProductModel product) {
     if (_items.containsKey(product.id)) {
-      // Nếu có rồi -> Tăng số lượng
       _items.update(
         product.id!,
         (existing) => CartItemModel(
@@ -35,7 +39,6 @@ class CartController extends ChangeNotifier {
         ),
       );
     } else {
-      // Chưa có -> Thêm mới
       _items.putIfAbsent(
         product.id!,
         () => CartItemModel(id: product.id!, product: product, quantity: 1),
@@ -47,14 +50,16 @@ class CartController extends ChangeNotifier {
   // 2. GIẢM SỐ LƯỢNG
   void removeSingleItem(String productId) {
     if (!_items.containsKey(productId)) return;
-    
+
     if (_items[productId]!.quantity > 1) {
       _items.update(
-          productId,
-          (existing) => CartItemModel(
-              id: existing.id,
-              product: existing.product,
-              quantity: existing.quantity - 1));
+        productId,
+        (existing) => CartItemModel(
+          id: existing.id,
+          product: existing.product,
+          quantity: existing.quantity - 1,
+        ),
+      );
     } else {
       _items.remove(productId);
     }
@@ -73,49 +78,90 @@ class CartController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- 3. CHỨC NĂNG THANH TOÁN (XUẤT KHO) ---
+  // --- 3. CHỨC NĂNG THANH TOÁN (ĐÃ SỬA LỖI & DÙNG TRANSACTION) ---
   Future<void> checkout() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null || _items.isEmpty) return;
 
+    // Bắt đầu loading
+    _isLoading = true;
+    notifyListeners();
+
     final firestore = FirebaseFirestore.instance;
-    final batch = firestore.batch(); // Dùng Batch để đảm bảo an toàn dữ liệu
 
     try {
-      // A. Tạo đơn hàng lưu vào lịch sử (Orders)
-      final orderRef = firestore.collection('orders').doc();
-      batch.set(orderRef, {
-        'userId': user.uid,
-        'totalAmount': totalAmount,
-        'date': Timestamp.now(),
-        'products': _items.values.map((item) => {
-          'productId': item.product.id,
-          'name': item.product.name,
-          'quantity': item.quantity,
-          'price': item.product.sellPrice,
-        }).toList(),
+      // Dùng Transaction để an toàn dữ liệu (nhiều người mua cùng lúc)
+      await firestore.runTransaction((transaction) async {
+        // A. Kiểm tra tồn kho của TẤT CẢ sản phẩm trước
+        for (var item in _items.values) {
+          final productRef = firestore
+              .collection('products')
+              .doc(item.product.id);
+          final snapshot = await transaction.get(productRef);
+
+          if (!snapshot.exists) {
+            throw Exception("Sản phẩm '${item.product.name}' không tồn tại!");
+          }
+
+          // Lấy tồn kho thực tế trên Server
+          int currentStock = snapshot.data()!['stock'] ?? 0;
+
+          if (currentStock < item.quantity) {
+            throw Exception(
+              "Sản phẩm '${item.product.name}' chỉ còn $currentStock cái. Không đủ hàng!",
+            );
+          }
+
+          // Trừ kho (Chưa ghi ngay, đợi lệnh cuối cùng)
+          int newStock = currentStock - item.quantity;
+          transaction.update(productRef, {'stock': newStock});
+        }
+
+        // B. Tạo đơn hàng (Sửa lỗi Type Cast ở đây)
+        final orderRef = firestore.collection('orders').doc();
+
+        // Chuyển đổi list items sang List<Map<String, dynamic>> rõ ràng
+        List<Map<String, dynamic>> orderItems = _items.values.map((item) {
+          return {
+            'productId': item.product.id,
+            'name': item.product.name,
+            'quantity': item.quantity,
+            'price': item.product.sellPrice,
+          };
+        }).toList();
+
+        transaction.set(orderRef, {
+          'userId': user.uid,
+          'totalAmount': totalAmount,
+          'date': Timestamp.now(), // Dùng date cho khớp với OrderModel
+          'products': orderItems, // Lưu list đã ép kiểu
+        });
       });
 
-      // B. Trừ tồn kho (Stock Out)
+      // --- LOGIC SAU KHI THÀNH CÔNG ---
+
+      // Kiểm tra cảnh báo nhập hàng (Dùng dữ liệu cục bộ để báo nhanh)
+      int notificationId = 0;
       for (var item in _items.values) {
-        final productRef = firestore.collection('products').doc(item.product.id);
-        
-        // Logic trừ: Tồn kho mới = Tồn kho cũ - Số lượng mua
-        // Lưu ý: Trong thực tế cần check xem còn đủ hàng không, ở đây làm đơn giản
-        batch.update(productRef, {
-          'stock': FieldValue.increment(-item.quantity), 
-        });
+        int estimatedRemaining = item.product.stock - item.quantity;
+        if (estimatedRemaining < 5) {
+          NotificationService.showWarningNotification(
+            id: notificationId++,
+            title: '⚠️ Báo động đỏ: ${item.product.name}',
+            body:
+                'Ước tính chỉ còn khoảng $estimatedRemaining sản phẩm. Nhập hàng ngay!',
+          );
+        }
       }
 
-      // C. Thực thi lệnh
-      await batch.commit();
-      
-      // D. Xóa giỏ hàng sau khi bán xong
-      clearCart();
-      
+      clearCart(); // Xóa giỏ hàng
     } catch (e) {
       print("Lỗi thanh toán: $e");
-      rethrow;
+      rethrow; // Ném lỗi ra ngoài để UI hiển thị thông báo
+    } finally {
+      // Tắt loading dù thành công hay thất bại
+      _isLoading = false;
+      notifyListeners();
     }
   }
 }
