@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
   permission_handler_windows
+  printing
   webview_windows
 )
 

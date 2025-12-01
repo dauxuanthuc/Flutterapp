@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:simple_barcode_scanner/simple_barcode_scanner.dart'; // 1. IMPORT THƯ VIỆN SCAN
 
 // Import các Controller và Model
 import '../controllers/product_controller.dart';
@@ -10,7 +11,7 @@ import '../models/product_model.dart';
 import '../models/category_model.dart';
 
 class AddProductView extends StatefulWidget {
-  final ProductModel? product; // Nếu null là Thêm, có dữ liệu là Sửa
+  final ProductModel? product;
   const AddProductView({super.key, this.product});
 
   @override
@@ -22,28 +23,52 @@ class _AddProductViewState extends State<AddProductView> {
   
   // Các controller nhập liệu
   late TextEditingController _nameCtrl;
+  late TextEditingController _barcodeCtrl; // 2. THÊM CONTROLLER MÃ VẠCH
   late TextEditingController _importPriceCtrl;
   late TextEditingController _sellPriceCtrl;
   late TextEditingController _stockCtrl;
   late TextEditingController _descCtrl;
   
-  // Biến lưu danh mục đang chọn
   String? _selectedCategory;
   File? _pickedImage;
 
   @override
   void initState() {
     super.initState();
-    // Điền dữ liệu cũ nếu là chế độ Sửa
+    // Khởi tạo các controller
     _nameCtrl = TextEditingController(text: widget.product?.name ?? '');
+    _barcodeCtrl = TextEditingController(text: widget.product?.barcode ?? ''); // Lấy mã vạch cũ nếu có
     _importPriceCtrl = TextEditingController(text: widget.product?.importPrice.toString() ?? '');
     _sellPriceCtrl = TextEditingController(text: widget.product?.sellPrice.toString() ?? '');
     _stockCtrl = TextEditingController(text: widget.product?.stock.toString() ?? '');
     _descCtrl = TextEditingController(text: widget.product?.description ?? '');
     
-    // Nếu đang sửa thì lấy danh mục cũ
     if (widget.product != null) {
       _selectedCategory = widget.product!.category;
+    }
+  }
+
+  // 3. HÀM QUÉT MÃ VẠCH
+  void _scanBarcode() async {
+    String? res = await SimpleBarcodeScanner.scanBarcode(
+      context,
+      barcodeAppBar: const BarcodeAppBar(
+        appBarTitle: 'Quét mã vạch',
+        centerTitle: false,
+        enableBackButton: true,
+        backButtonIcon: Icon(Icons.arrow_back_ios),
+      ),
+      isShowFlashIcon: true,
+      delayMillis: 2000,
+      cameraFace: CameraFace.back,
+    );
+    
+    // Nếu quét thành công (kết quả khác -1 và không rỗng)
+    if (res != null && res != '-1' && res.isNotEmpty) {
+      setState(() {
+        _barcodeCtrl.text = res;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Đã quét: $res")));
     }
   }
 
@@ -57,7 +82,6 @@ class _AddProductViewState extends State<AddProductView> {
 
   void _save() async {
     if (_formKey.currentState!.validate()) {
-      // Kiểm tra xem đã chọn danh mục chưa
       if (_selectedCategory == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Vui lòng chọn danh mục!"))
@@ -69,23 +93,19 @@ class _AddProductViewState extends State<AddProductView> {
       
       final newProduct = ProductModel(
         name: _nameCtrl.text,
+        barcode: _barcodeCtrl.text, // 4. LƯU MÃ VẠCH VÀO MODEL
         importPrice: double.tryParse(_importPriceCtrl.text) ?? 0,
         sellPrice: double.tryParse(_sellPriceCtrl.text) ?? 0,
         stock: int.tryParse(_stockCtrl.text) ?? 0,
         description: _descCtrl.text,
         category: _selectedCategory!,
         imageUrl: widget.product?.imageUrl ?? '',
-        // --- SỬA LỖI Ở ĐÂY ---
-        // Phải truyền userId vào Model. 
-        // Nếu là Sửa -> Lấy userId cũ. Nếu là Thêm -> Để rỗng (Controller sẽ tự điền UID mới)
         userId: widget.product?.userId ?? '', 
       );
 
       if (widget.product == null) {
-        // Thêm mới
         await controller.addProduct(newProduct, _pickedImage);
       } else {
-        // Cập nhật
         await controller.updateProduct(widget.product!.id!, newProduct, _pickedImage);
       }
       
@@ -106,7 +126,7 @@ class _AddProductViewState extends State<AddProductView> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // 1. Chọn ảnh
+              // Chọn ảnh
               GestureDetector(
                 onTap: _pickImage,
                 child: Container(
@@ -125,10 +145,44 @@ class _AddProductViewState extends State<AddProductView> {
                             )),
                 ),
               ),
+              const SizedBox(height: 20),
+
+              // --- 5. GIAO DIỆN MÃ VẠCH ---
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end, // Căn chỉnh đáy cho đẹp
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _barcodeCtrl,
+                      decoration: const InputDecoration(
+                        labelText: "Mã vạch (Barcode)",
+                        hintText: "Quét hoặc nhập tay",
+                        prefixIcon: Icon(Icons.qr_code_2),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    height: 55, // Chiều cao bằng với TextField mặc định
+                    child: ElevatedButton(
+                      onPressed: _scanBarcode,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[50],
+                        foregroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5))
+                      ),
+                      child: const Icon(Icons.qr_code_scanner, size: 30),
+                    ),
+                  )
+                ],
+              ),
+              const SizedBox(height: 15),
+              // ----------------------------
+              
+              TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: "Tên sản phẩm"), validator: (v) => v!.isEmpty ? "Cần nhập tên" : null),
               const SizedBox(height: 10),
               
-              // 2. Form nhập liệu
-              TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: "Tên sản phẩm"), validator: (v) => v!.isEmpty ? "Cần nhập tên" : null),
               Row(
                 children: [
                   Expanded(child: TextFormField(controller: _importPriceCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Giá nhập"))),
@@ -136,16 +190,15 @@ class _AddProductViewState extends State<AddProductView> {
                   Expanded(child: TextFormField(controller: _sellPriceCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Giá bán"))),
                 ],
               ),
-              TextFormField(controller: _stockCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Số lượng tồn kho")),
+              const SizedBox(height: 10),
               
+              TextFormField(controller: _stockCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Số lượng tồn kho")),
               const SizedBox(height: 10),
 
-              // 3. Dropdown Danh mục
               StreamBuilder<List<CategoryModel>>(
                 stream: context.read<CategoryController>().categoriesStream,
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) return const Center(child: LinearProgressIndicator());
-                  
                   final categories = snapshot.data!;
                   
                   if (categories.isEmpty) {
@@ -161,10 +214,7 @@ class _AddProductViewState extends State<AddProductView> {
 
                   return DropdownButtonFormField<String>(
                     value: _selectedCategory,
-                    items: categories.map((c) => DropdownMenuItem(
-                      value: c.name, 
-                      child: Text(c.name)
-                    )).toList(),
+                    items: categories.map((c) => DropdownMenuItem(value: c.name, child: Text(c.name))).toList(),
                     onChanged: (v) => setState(() => _selectedCategory = v!),
                     decoration: const InputDecoration(labelText: "Danh mục", border: OutlineInputBorder()),
                   );
@@ -175,7 +225,6 @@ class _AddProductViewState extends State<AddProductView> {
               TextFormField(controller: _descCtrl, decoration: const InputDecoration(labelText: "Mô tả"), maxLines: 3),
               const SizedBox(height: 20),
               
-              // 4. Nút Lưu
               ElevatedButton(
                 onPressed: _save,
                 style: ElevatedButton.styleFrom(

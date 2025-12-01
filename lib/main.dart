@@ -5,9 +5,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'controllers/product_controller.dart';
 import 'controllers/category_controller.dart';
+import 'controllers/cart_controller.dart';
 
 // Import các file MVC
 import 'controllers/auth_controller.dart';
+import 'controllers/order_controller.dart';
 import 'views/login_view.dart';
 import 'views/home_view.dart';
 
@@ -28,6 +30,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthController()),
         ChangeNotifierProvider(create: (_) => ProductController()),
         ChangeNotifierProvider(create: (_) => CategoryController()),
+        ChangeNotifierProvider(create: (_) => CartController()),
+        ChangeNotifierProvider(create: (_) => OrderController()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

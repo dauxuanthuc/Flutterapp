@@ -1,6 +1,7 @@
 class ProductModel {
   String? id;
   String name;
+  String barcode;
   double importPrice; // Giá nhập
   double sellPrice;   // Giá bán
   int stock;          // Tồn kho
@@ -12,6 +13,7 @@ class ProductModel {
   ProductModel({
     this.id,
     required this.name,
+    required this.barcode,
     required this.importPrice,
     required this.sellPrice,
     required this.stock,
@@ -26,6 +28,7 @@ class ProductModel {
     return ProductModel(
       id: id,
       name: map['name'] ?? '',
+      barcode: map['barcode'] ?? '',
       importPrice: (map['importPrice'] ?? 0).toDouble(),
       sellPrice: (map['sellPrice'] ?? 0).toDouble(),
       stock: map['stock'] ?? 0,
@@ -40,6 +43,7 @@ class ProductModel {
   Map<String, dynamic> toMap() {
     return {
       'name': name,
+      'barcode': barcode,
       'importPrice': importPrice,
       'sellPrice': sellPrice,
       'stock': stock,
