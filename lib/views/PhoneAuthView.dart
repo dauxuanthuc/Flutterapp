@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl_phone_field/intl_phone_field.dart'; // Import thư viện
 import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
 import '../utils/show_snack.dart';
@@ -12,16 +13,24 @@ class PhoneAuthView extends StatefulWidget {
 }
 
 class _PhoneAuthViewState extends State<PhoneAuthView> {
-  final _phoneController = TextEditingController();
+  // Chúng ta sẽ lưu số điện thoại đầy đủ (có cả +84) vào biến này
+  String completePhoneNumber = "";
   final _otpController = TextEditingController();
   bool _isOtpSent = false;
 
   void _sendOtp() async {
+    if (completePhoneNumber.isEmpty) {
+      showSnackBar(context, "Vui lòng nhập số điện thoại hợp lệ");
+      return;
+    }
+
     final authController = Provider.of<AuthController>(context, listen: false);
-    await authController.sendOtp(_phoneController.text.trim(), (result) {
+
+    // Gửi completePhoneNumber (đã có dạng +84...)
+    await authController.sendOtp(completePhoneNumber, (result) {
       if (result == "OTP_SENT") {
         setState(() => _isOtpSent = true);
-        showSnackBar(context, "Mã OTP đã được gửi!");
+        showSnackBar(context, "Mã OTP đã được gửi đến $completePhoneNumber");
       } else if (result != null) {
         showSnackBar(context, result);
       }
@@ -46,31 +55,53 @@ class _PhoneAuthViewState extends State<PhoneAuthView> {
     final isLoading = context.watch<AuthController>().isLoading;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Xác thực Số điện thoại")),
+      appBar: AppBar(title: const Text("Xác thực điện thoại")),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            TextField(
-              controller: _phoneController,
-              decoration: const InputDecoration(labelText: "Số điện thoại (+84...)"),
-              keyboardType: TextInputType.phone,
+            const SizedBox(height: 20),
+            // SỬ DỤNG INTL_PHONE_FIELD TẠI ĐÂY
+            IntlPhoneField(
+              decoration: const InputDecoration(
+                labelText: 'Số điện thoại',
+                border: OutlineInputBorder(),
+              ),
+              initialCountryCode: 'VN', // Mặc định là Việt Nam
+              languageCode: "vi", // Hiển thị tiếng Việt nếu thư viện hỗ trợ
+              disableLengthCheck:
+                  false, // Tự động kiểm tra độ dài số điện thoại
               enabled: !_isOtpSent,
+              onChanged: (phone) {
+                // phone.completeNumber sẽ tự động nối: +84 + số điện thoại bỏ số 0 đầu
+                completePhoneNumber = phone.completeNumber;
+              },
             ),
+
             if (_isOtpSent) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 15),
               TextField(
                 controller: _otpController,
-                decoration: const InputDecoration(labelText: "Nhập mã OTP"),
+                decoration: const InputDecoration(
+                  labelText: "Nhập mã OTP gồm 6 số",
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.security),
+                ),
                 keyboardType: TextInputType.number,
               ),
             ],
-            const SizedBox(height: 20),
+
+            const SizedBox(height: 25),
             isLoading
                 ? const CircularProgressIndicator()
                 : ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
                     onPressed: _isOtpSent ? _verifyOtp : _sendOtp,
-                    child: Text(_isOtpSent ? "Xác nhận OTP" : "Gửi mã OTP"),
+                    child: Text(
+                      _isOtpSent ? "Xác nhận mã OTP" : "Gửi yêu cầu OTP",
+                    ),
                   ),
           ],
         ),
