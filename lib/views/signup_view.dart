@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
 import '../utils/show_snack.dart';
+import 'phoneAuthView.dart';
 
 class SignupView extends StatefulWidget {
   const SignupView({super.key});
@@ -25,7 +26,6 @@ class _SignupViewState extends State<SignupView> {
     if (error != null && mounted) {
       showSnackBar(context, error);
     } else if (mounted) {
-      // Đăng ký thành công thì lùi về màn hình trước (hoặc để tự động login)
       Navigator.pop(context);
     }
   }
@@ -40,15 +40,35 @@ class _SignupViewState extends State<SignupView> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            TextField(controller: _emailController, decoration: const InputDecoration(labelText: "Email")),
-            TextField(controller: _passController, decoration: const InputDecoration(labelText: "Mật khẩu"), obscureText: true),
+            TextField(
+              controller: _emailController, 
+              decoration: const InputDecoration(labelText: "Email", border: OutlineInputBorder())
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: _passController, 
+              decoration: const InputDecoration(labelText: "Mật khẩu", border: OutlineInputBorder()), 
+              obscureText: true
+            ),
             const SizedBox(height: 20),
             isLoading
                 ? const CircularProgressIndicator()
                 : ElevatedButton(
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
                     onPressed: _handleSignup,
                     child: const Text("Đăng ký"),
                   ),
+            const SizedBox(height: 20),
+            const Text("Hoặc sử dụng phương thức khác"),
+            IconButton(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context, 
+                  MaterialPageRoute(builder: (_) => const PhoneAuthView())
+                );
+              }, 
+              icon: const Icon(Icons.phone_android, size: 40, color: Colors.blue)
+            )
           ],
         ),
       ),

@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
 import '../utils/show_snack.dart';
 import 'signup_view.dart';
-import 'biometric_lock_view.dart'; // <--- 1. Import màn hình Khóa
+import 'biometric_lock_view.dart';
+import 'PhoneAuthView.dart'; // <--- Import trang Phone Auth mới
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -19,24 +20,19 @@ class _LoginViewState extends State<LoginView> {
   void _handleLogin() async {
     final authController = Provider.of<AuthController>(context, listen: false);
     
-    // Gọi controller đăng nhập
     String? error = await authController.login(
       _emailController.text.trim(),
       _passController.text.trim(),
     );
 
-    // Nếu có lỗi thì hiện thông báo
     if (error != null && mounted) {
       showSnackBar(context, error);
     } 
-    // --- 2. CODE MỚI SỬA: NẾU THÀNH CÔNG THÌ CHUYỂN TRANG NGAY ---
     else if (mounted) {
-      // Đăng nhập thành công -> Chuyển thẳng sang màn hình Khóa Vân Tay
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const BiometricLockView()),
       );
     }
-    // -------------------------------------------------------------
   }
 
   @override
@@ -45,18 +41,27 @@ class _LoginViewState extends State<LoginView> {
 
     return Scaffold(
       appBar: AppBar(title: const Text("Đăng nhập")),
-      body: Padding(
+      body: SingleChildScrollView( // Sử dụng để tránh lỗi tràn màn hình khi hiện bàn phím
         padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const SizedBox(height: 40),
             TextField(
               controller: _emailController,
-              decoration: const InputDecoration(labelText: "Email"),
+              decoration: const InputDecoration(
+                labelText: "Email",
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.email),
+              ),
             ),
+            const SizedBox(height: 15),
             TextField(
               controller: _passController,
-              decoration: const InputDecoration(labelText: "Mật khẩu"),
+              decoration: const InputDecoration(
+                labelText: "Mật khẩu",
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.lock),
+              ),
               obscureText: true,
             ),
             const SizedBox(height: 20),
@@ -64,10 +69,42 @@ class _LoginViewState extends State<LoginView> {
             isLoading
                 ? const CircularProgressIndicator()
                 : ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
                     onPressed: _handleLogin,
-                    child: const Text("Đăng nhập"),
+                    child: const Text("Đăng nhập bằng Email"),
                   ),
             
+            const SizedBox(height: 20),
+            const Row(
+              children: [
+                Expanded(child: Divider()),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: Text("HOẶC"),
+                ),
+                Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // NÚT ĐĂNG NHẬP BẰNG SỐ ĐIỆN THOẠI
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 50),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PhoneAuthView()),
+                );
+              },
+              icon: const Icon(Icons.phone_android),
+              label: const Text("Tiếp tục với Số điện thoại"),
+            ),
+
+            const SizedBox(height: 10),
             TextButton(
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const SignupView()));

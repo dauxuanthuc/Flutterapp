@@ -31,4 +31,34 @@ class AuthService {
   Future<void> signOut() async {
     await _auth.signOut();
   }
+
+  // Trong services/auth_service.dart
+
+  // Gửi mã OTP về số điện thoại
+  Future<void> verifyPhone({
+    required String phoneNumber,
+    required Function(PhoneAuthCredential) verificationCompleted,
+    required Function(FirebaseAuthException) verificationFailed,
+    required Function(String, int?) codeSent,
+    required Function(String) codeAutoRetrievalTimeout,
+  }) async {
+    await _auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: verificationCompleted,
+      verificationFailed: verificationFailed,
+      codeSent: codeSent,
+      codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
+      timeout: const Duration(seconds: 60),
+    );
+  }
+
+  // Xác nhận mã OTP để đăng nhập
+  Future<User?> signInWithPhone(String verificationId, String smsCode) async {
+    PhoneAuthCredential credential = PhoneAuthProvider.credential(
+      verificationId: verificationId,
+      smsCode: smsCode,
+    );
+    UserCredential cred = await _auth.signInWithCredential(credential);
+    return cred.user;
+  }
 }
