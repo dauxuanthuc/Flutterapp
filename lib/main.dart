@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' show PlatformDispatcher;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'firebase_options.dart';
 
-// Import Controllers
+// Controllers
 import 'controllers/product_controller.dart';
 import 'controllers/category_controller.dart';
 import 'controllers/cart_controller.dart';
@@ -12,19 +14,49 @@ import 'controllers/stats_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/order_controller.dart';
 
-// Import Services
+// Services
 import 'services/notification_service.dart';
 
-// Import Views
+// Views
 import 'views/login_view.dart';
 import 'views/home_view.dart';
-import 'views/biometric_lock_view.dart';
-import 'views/auth_wrapper.dart'; // ✅ Đã import file này thì không viết class ở dưới nữa
+import 'views/auth_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await NotificationService.initialize();
+
+  /// 🔴 BẮT LỖI TOÀN APP – RẤT QUAN TRỌNG
+  FlutterError.onError = (FlutterErrorDetails details) {
+    debugPrint('Flutter error: ${details.exception}');
+    debugPrintStack(stackTrace: details.stack);
+  };
+
+  /// 🔴 BẮT LỖI ZONE - HỖ TRỢ RELEASE MODE
+  final originalOnError = FlutterError.onError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('Zone error: $error');
+    debugPrintStack(stackTrace: stack);
+    return true;
+  };
+
+  /// 🔴 INIT FIREBASE AN TOÀN
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('✅ Firebase initialized successfully');
+  } catch (e) {
+    debugPrint('❌ Firebase init error: $e');
+  }
+
+  /// 🔴 INIT NOTIFICATION AN TOÀN
+  try {
+    await NotificationService.initialize();
+    debugPrint('✅ Notification service initialized');
+  } catch (e) {
+    debugPrint('❌ Notification init error: $e');
+  }
+
   runApp(const MyApp());
 }
 
@@ -44,11 +76,12 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'MVC Auth Project',
-        theme: ThemeData(primarySwatch: Colors.blue),
-        
-        // Gọi AuthWrapper từ file 'views/auth_wrapper.dart'
-        home: const AuthWrapper(), 
+        title: 'Online Shop',
+        theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: false),
+
+        /// 🔴 KHÔNG DÙNG FirebaseAuth.instance.currentUser!
+        /// 🔴 DÙNG AuthWrapper AN TOÀN
+        home: const AuthWrapper(),
       ),
     );
   }

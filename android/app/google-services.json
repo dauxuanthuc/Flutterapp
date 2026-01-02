@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:364284288036:android:0120004848a1dae9e4ccb1",
+        "mobilesdk_app_id": "1:364284288036:android:6c510022a8cc62eee4ccb1",
         "android_client_info": {
-          "package_name": "com.example.duan"
+          "package_name": "com.onlineshop.duan"
         }
       },
       "oauth_client": [],

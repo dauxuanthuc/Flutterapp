@@ -5,24 +5,36 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart'; // 1. IMPORT AUTH
 import '../models/product_model.dart';
+import '../models/restock_suggestion_model.dart';
+import '../services/restock_service.dart';
 
 class ProductController extends ChangeNotifier {
-  final CollectionReference _productRef = FirebaseFirestore.instance.collection('products');
+  final CollectionReference _productRef = FirebaseFirestore.instance.collection(
+    'products',
+  );
+  final RestockService _restockService = RestockService();
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+
+  List<RestockSuggestion> _restockSuggestions = [];
+  List<RestockSuggestion> get restockSuggestions => _restockSuggestions;
+
+  bool _isLoadingSuggestions = false;
+  bool get isLoadingSuggestions => _isLoadingSuggestions;
 
   // --- 1. UPLOAD ẢNH LÊN IMGBB ---
   Future<String?> uploadImageToImgBB(File imageFile) async {
     try {
-      // API Key của bạn
-      const apiKey = '0fef1b66583bedc0a470d5d13a461bcc'; 
-      
+      const apiKey = '0fef1b66583bedc0a470d5d13a461bcc';
+
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('https://api.imgbb.com/1/upload?key=$apiKey'),
       );
-      request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
-      
+      request.files.add(
+        await http.MultipartFile.fromPath('image', imageFile.path),
+      );
+
       final response = await request.send();
       if (response.statusCode == 200) {
         final responseData = await http.Response.fromStream(response);
@@ -41,10 +53,10 @@ class ProductController extends ChangeNotifier {
     try {
       // Lấy User hiện tại
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return; 
+      if (user == null) return;
 
       String imageUrl = product.imageUrl;
-      
+
       // Nếu có chọn ảnh thì upload trước
       if (imageFile != null) {
         String? url = await uploadImageToImgBB(imageFile);
@@ -64,7 +76,11 @@ class ProductController extends ChangeNotifier {
   }
 
   // --- 3. SỬA SẢN PHẨM ---
-  Future<void> updateProduct(String id, ProductModel product, File? newImageFile) async {
+  Future<void> updateProduct(
+    String id,
+    ProductModel product,
+    File? newImageFile,
+  ) async {
     _setLoading(true);
     try {
       String imageUrl = product.imageUrl;
@@ -112,6 +128,70 @@ class ProductController extends ChangeNotifier {
       print("Lỗi tìm barcode: $e");
     }
     return null;
+  }
+
+  // --- 6. LẤY DANH SÁCH GỢI Ý NHẬP HÀNG THÔNG MINH ---
+  Future<void> loadRestockSuggestions({
+    int lookbackDays = 30,
+    int safetyStockDays = 7,
+    int maxDaysThreshold = 14,
+    int minOrderQuantity = 10,
+  }) async {
+    _isLoadingSuggestions = true;
+    notifyListeners();
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        _restockSuggestions = [];
+        _isLoadingSuggestions = false;
+        notifyListeners();
+        return;
+      }
+
+      _restockSuggestions = await _restockService.getRestockSuggestions(
+        user.uid,
+        lookbackDays: lookbackDays,
+        safetyStockDays: safetyStockDays,
+        maxDaysThreshold: maxDaysThreshold,
+        minOrderQuantity: minOrderQuantity,
+      );
+    } catch (e) {
+      print("Lỗi load gợi ý: $e");
+      _restockSuggestions = [];
+    }
+
+    _isLoadingSuggestions = false;
+    notifyListeners();
+  }
+
+  // --- 7. LẤY THỐNG KÊ RESTOCK ---
+  Future<Map<String, dynamic>> getRestockStatistics() async {
+    try {
+      final totalCost = await _restockService.getTotalEstimatedCost(
+        _restockSuggestions,
+      );
+      final criticalCount = _restockService.getCriticalProductsCount(
+        _restockSuggestions,
+      );
+
+      return {
+        'totalSuggestions': _restockSuggestions.length,
+        'criticalProducts': criticalCount,
+        'totalEstimatedCost': totalCost,
+        'averageCostPerProduct': _restockSuggestions.isNotEmpty
+            ? totalCost / _restockSuggestions.length
+            : 0,
+      };
+    } catch (e) {
+      print("Lỗi thống kê: $e");
+      return {
+        'totalSuggestions': 0,
+        'criticalProducts': 0,
+        'totalEstimatedCost': 0,
+        'averageCostPerProduct': 0,
+      };
+    }
   }
 
   void _setLoading(bool value) {

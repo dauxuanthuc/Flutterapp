@@ -63,7 +63,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '364284288036',
     projectId: 'duan-ea163',
     storageBucket: 'duan-ea163.firebasestorage.app',
-    iosBundleId: 'com.example.duan',
+    iosBundleId: 'com.onlineshop.duan',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -72,7 +72,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '364284288036',
     projectId: 'duan-ea163',
     storageBucket: 'duan-ea163.firebasestorage.app',
-    iosBundleId: 'com.example.duan',
+    iosBundleId: 'com.onlineshop.duan',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

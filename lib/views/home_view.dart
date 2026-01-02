@@ -16,6 +16,8 @@ import 'checkout_view.dart';
 import 'invoice_list_view.dart';
 import 'stats_view.dart';
 import 'login_view.dart';
+import 'restock_suggestion_screen.dart';
+import 'restock_test_screen.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -115,6 +117,18 @@ class _HomeViewState extends State<HomeView> {
                   context,
                   MaterialPageRoute(builder: (_) => const CategoryView()),
                 );
+              } else if (value == 'restock') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const RestockSuggestionScreen(),
+                  ),
+                );
+              } else if (value == 'test_restock') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RestockTestScreen()),
+                );
               } else if (value == 'logout') {
                 await context.read<AuthController>().logout();
                 if (mounted) {
@@ -133,6 +147,16 @@ class _HomeViewState extends State<HomeView> {
                     Icon(Icons.category, size: 18),
                     SizedBox(width: 8),
                     Text("Danh mục"),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'restock',
+                child: Row(
+                  children: [
+                    Icon(Icons.inventory, size: 18, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Text("Gợi ý nhập hàng"),
                   ],
                 ),
               ),
