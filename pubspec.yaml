@@ -49,6 +49,7 @@ dependencies:
   http: ^1.6.0
   intl_phone_field: ^3.2.0
   flutter_launcher_icons: ^0.14.3
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +75,7 @@ flutter:
 
   assets:
     - assets/icons/
+    - .env
 
   # To add assets to your application, add an assets section, like this:
   # assets:

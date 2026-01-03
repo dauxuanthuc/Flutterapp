@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart'; // 1. IMPORT AUTH
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/product_model.dart';
 import '../models/restock_suggestion_model.dart';
 import '../services/restock_service.dart';
@@ -25,7 +26,11 @@ class ProductController extends ChangeNotifier {
   // --- 1. UPLOAD ẢNH LÊN IMGBB ---
   Future<String?> uploadImageToImgBB(File imageFile) async {
     try {
-      const apiKey = '0fef1b66583bedc0a470d5d13a461bcc';
+      final apiKey = dotenv.env['IMGBB_API_KEY'];
+      if (apiKey == null) {
+        print("Lỗi: IMGBB_API_KEY không được tìm thấy trong biến môi trường");
+        return null;
+      }
 
       final request = http.MultipartRequest(
         'POST',
