@@ -29,7 +29,7 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   String _filterCategory = 'Tất cả';
-  int _selectedIndex = 0; 
+  int _selectedIndex = 0;
 
   String formatCurrency(double price) {
     return NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(price);
