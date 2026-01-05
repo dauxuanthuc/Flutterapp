@@ -56,23 +56,22 @@ class ProductController extends ChangeNotifier {
   Future<void> addProduct(ProductModel product, File? imageFile) async {
     _setLoading(true);
     try {
-      // Lấy User hiện tại
+
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
       String imageUrl = product.imageUrl;
 
-      // Nếu có chọn ảnh thì upload trước
       if (imageFile != null) {
         String? url = await uploadImageToImgBB(imageFile);
         if (url != null) imageUrl = url;
       }
 
-      // Lưu vào Firestore
+
       await _productRef.add({
         ...product.toMap(),
         'imageUrl': imageUrl,
-        'userId': user.uid, // <--- QUAN TRỌNG: Gắn chủ sở hữu
+        'userId': user.uid, 
       });
     } catch (e) {
       print("Lỗi thêm: $e");

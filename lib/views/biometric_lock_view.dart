@@ -23,11 +23,9 @@ class _BiometricLockViewState extends State<BiometricLockView> {
   }
 
   void _checkBiometric() async {
-    // Kiểm tra mounted để tránh lỗi gọi setState khi màn hình chưa vẽ xong
     if (!mounted) return;
     setState(() => _isAuthenticating = true);
 
-    // 1. Kiểm tra máy có hỗ trợ không
     bool isAvailable = await BiometricService.isBiometricAvailable();
 
     if (!isAvailable) {
@@ -37,16 +35,15 @@ class _BiometricLockViewState extends State<BiometricLockView> {
       return;
     }
 
-    // 2. Tiến hành quét
     bool isAuthenticated = await BiometricService.authenticate();
 
-    if (!mounted) return; // Kiểm tra lại sau khi await
+    if (!mounted) return; 
 
     if (isAuthenticated) {
       _goToHome();
     } else {
       setState(() => _isAuthenticating = false);
-      // Quét sai hoặc bấm Hủy thì ở yên đây
+
     }
   }
 

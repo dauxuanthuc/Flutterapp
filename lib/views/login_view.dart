@@ -4,7 +4,7 @@ import '../controllers/auth_controller.dart';
 import '../utils/show_snack.dart';
 import 'signup_view.dart';
 import 'biometric_lock_view.dart';
-import 'PhoneAuthView.dart'; // <--- Import trang Phone Auth mới
+import 'PhoneAuthView.dart'; 
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -41,7 +41,7 @@ class _LoginViewState extends State<LoginView> {
 
     return Scaffold(
       appBar: AppBar(title: const Text("Đăng nhập")),
-      body: SingleChildScrollView( // Sử dụng để tránh lỗi tràn màn hình khi hiện bàn phím
+      body: SingleChildScrollView( 
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
@@ -89,7 +89,7 @@ class _LoginViewState extends State<LoginView> {
             ),
             const SizedBox(height: 20),
 
-            // NÚT ĐĂNG NHẬP BẰNG SỐ ĐIỆN THOẠI
+
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),

@@ -42,14 +42,14 @@ class CategoryController extends ChangeNotifier {
     try {
       await _cateRef.add({
         'name': name,
-        'userId': user.uid, // <--- GHI DẤU CHỦ SỞ HỮU
+        'userId': user.uid, 
       });
     } catch (e) {
       print("Lỗi thêm danh mục: $e");
     }
   }
 
-  // Hàm xóa giữ nguyên (chỉ xóa được cái mình thấy nên an toàn rồi)
+  // Hàm xóa 
   Future<void> deleteCategory(String id) async {
     try {
       await _cateRef.doc(id).delete();

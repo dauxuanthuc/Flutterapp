@@ -23,7 +23,7 @@ class _AddProductViewState extends State<AddProductView> {
   
   // Các controller nhập liệu
   late TextEditingController _nameCtrl;
-  late TextEditingController _barcodeCtrl; // 2. THÊM CONTROLLER MÃ VẠCH
+  late TextEditingController _barcodeCtrl; 
   late TextEditingController _importPriceCtrl;
   late TextEditingController _sellPriceCtrl;
   late TextEditingController _stockCtrl;
@@ -35,7 +35,6 @@ class _AddProductViewState extends State<AddProductView> {
   @override
   void initState() {
     super.initState();
-    // Khởi tạo các controller
     _nameCtrl = TextEditingController(text: widget.product?.name ?? '');
     _barcodeCtrl = TextEditingController(text: widget.product?.barcode ?? ''); // Lấy mã vạch cũ nếu có
     _importPriceCtrl = TextEditingController(text: widget.product?.importPrice.toString() ?? '');
@@ -62,8 +61,7 @@ class _AddProductViewState extends State<AddProductView> {
       delayMillis: 2000,
       cameraFace: CameraFace.back,
     );
-    
-    // Nếu quét thành công (kết quả khác -1 và không rỗng)
+
     if (res != null && res != '-1' && res.isNotEmpty) {
       setState(() {
         _barcodeCtrl.text = res;
@@ -93,7 +91,7 @@ class _AddProductViewState extends State<AddProductView> {
       
       final newProduct = ProductModel(
         name: _nameCtrl.text,
-        barcode: _barcodeCtrl.text, // 4. LƯU MÃ VẠCH VÀO MODEL
+        barcode: _barcodeCtrl.text, 
         importPrice: double.tryParse(_importPriceCtrl.text) ?? 0,
         sellPrice: double.tryParse(_sellPriceCtrl.text) ?? 0,
         stock: int.tryParse(_stockCtrl.text) ?? 0,
@@ -126,7 +124,6 @@ class _AddProductViewState extends State<AddProductView> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // Chọn ảnh
               GestureDetector(
                 onTap: _pickImage,
                 child: Container(
@@ -149,7 +146,7 @@ class _AddProductViewState extends State<AddProductView> {
 
               // --- 5. GIAO DIỆN MÃ VẠCH ---
               Row(
-                crossAxisAlignment: CrossAxisAlignment.end, // Căn chỉnh đáy cho đẹp
+                crossAxisAlignment: CrossAxisAlignment.end, 
                 children: [
                   Expanded(
                     child: TextFormField(
@@ -164,7 +161,7 @@ class _AddProductViewState extends State<AddProductView> {
                   ),
                   const SizedBox(width: 10),
                   SizedBox(
-                    height: 55, // Chiều cao bằng với TextField mặc định
+                    height: 55, 
                     child: ElevatedButton(
                       onPressed: _scanBarcode,
                       style: ElevatedButton.styleFrom(
@@ -178,7 +175,6 @@ class _AddProductViewState extends State<AddProductView> {
                 ],
               ),
               const SizedBox(height: 15),
-              // ----------------------------
               
               TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: "Tên sản phẩm"), validator: (v) => v!.isEmpty ? "Cần nhập tên" : null),
               const SizedBox(height: 10),

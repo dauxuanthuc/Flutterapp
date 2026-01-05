@@ -15,7 +15,6 @@ class _RestockSuggestionScreenState extends State<RestockSuggestionScreen> {
   @override
   void initState() {
     super.initState();
-    // Load gợi ý khi mở màn hình
     Future.microtask(() {
       context.read<ProductController>().loadRestockSuggestions();
     });

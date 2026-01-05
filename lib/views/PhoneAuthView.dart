@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl_phone_field/intl_phone_field.dart'; // Import thư viện
+import 'package:intl_phone_field/intl_phone_field.dart'; 
 import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
 import '../utils/show_snack.dart';
@@ -61,19 +61,18 @@ class _PhoneAuthViewState extends State<PhoneAuthView> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            // SỬ DỤNG INTL_PHONE_FIELD TẠI ĐÂY
+
             IntlPhoneField(
               decoration: const InputDecoration(
                 labelText: 'Số điện thoại',
                 border: OutlineInputBorder(),
               ),
-              initialCountryCode: 'VN', // Mặc định là Việt Nam
-              languageCode: "vi", // Hiển thị tiếng Việt nếu thư viện hỗ trợ
+              initialCountryCode: 'VN', 
+              languageCode: "vi", 
               disableLengthCheck:
-                  false, // Tự động kiểm tra độ dài số điện thoại
+                  false, 
               enabled: !_isOtpSent,
               onChanged: (phone) {
-                // phone.completeNumber sẽ tự động nối: +84 + số điện thoại bỏ số 0 đầu
                 completePhoneNumber = phone.completeNumber;
               },
             ),

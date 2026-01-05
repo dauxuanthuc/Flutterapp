@@ -18,6 +18,7 @@ import 'stats_view.dart';
 import 'login_view.dart';
 import 'restock_suggestion_screen.dart';
 import 'restock_test_screen.dart';
+import 'restock_quick_summary_card.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -28,7 +29,7 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   String _filterCategory = 'Tất cả';
-  int _selectedIndex = 0; // Quản lý index của BottomBar
+  int _selectedIndex = 0; 
 
   String formatCurrency(double price) {
     return NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(price);
@@ -176,8 +177,19 @@ class _HomeViewState extends State<HomeView> {
       ),
       body: Column(
         children: [
-          // Bộ lọc danh mục (Chip Filter)
           _buildCategoryFilter(),
+
+          // Thẻ tóm tắt restock nhanh
+          RestockQuickSummaryCard(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const RestockSuggestionScreen(),
+                ),
+              );
+            },
+          ),
 
           // Danh sách sản phẩm
           Expanded(child: _buildProductGrid(query)),

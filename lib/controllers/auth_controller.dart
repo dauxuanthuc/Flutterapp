@@ -6,7 +6,7 @@ class AuthController extends ChangeNotifier {
   final AuthService _authService = AuthService();
   
   bool _isLoading = false;
-  bool get isLoading => _isLoading; // Để View hiển thị vòng xoay loading
+  bool get isLoading => _isLoading; 
 
   // Hàm Đăng nhập
   Future<String?> login(String email, String password) async {
@@ -14,7 +14,7 @@ class AuthController extends ChangeNotifier {
     try {
       await _authService.signIn(email, password);
       _setLoading(false);
-      return null; // Null nghĩa là thành công, không có lỗi
+      return null; 
     } on FirebaseAuthException catch (e) {
       _setLoading(false);
       return e.message; // Trả về nội dung lỗi
@@ -39,12 +39,12 @@ class AuthController extends ChangeNotifier {
     await _authService.signOut();
   }
 
-  // Helper để cập nhật trạng thái loading
+
   void _setLoading(bool value) {
     _isLoading = value;
-    notifyListeners(); // QUAN TRỌNG: Báo cho View vẽ lại
+    notifyListeners(); 
   }
-  // Trong controllers/auth_controller.dart
+
 
   String? _verificationId;
   String? get verificationId => _verificationId;
@@ -65,7 +65,7 @@ class AuthController extends ChangeNotifier {
         onResult(e.message);
       },
       codeSent: (verificationId, resendToken) {
-        _verificationId = verificationId; // Lưu lại mã này để dùng ở bước 2
+        _verificationId = verificationId; 
         _setLoading(false);
         onResult("OTP_SENT"); 
       },

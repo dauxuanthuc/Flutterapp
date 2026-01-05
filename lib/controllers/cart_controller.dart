@@ -6,19 +6,16 @@ import '../models/cart_item_model.dart';
 import '../services/notification_service.dart';
 
 class CartController extends ChangeNotifier {
-  // Danh sách hàng trong giỏ
+
   final Map<String, CartItemModel> _items = {};
 
   Map<String, CartItemModel> get items => _items;
 
-  // Biến trạng thái để hiện vòng xoay khi đang thanh toán
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  // Tổng số lượng sản phẩm
   int get itemCount => _items.length;
 
-  // Tổng tiền cần thanh toán
   double get totalAmount {
     var total = 0.0;
     _items.forEach((key, item) {
@@ -78,21 +75,19 @@ class CartController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- 3. CHỨC NĂNG THANH TOÁN (ĐÃ SỬA LỖI & DÙNG TRANSACTION) ---
+  // --- 3. CHỨC NĂNG THANH TOÁN  ---
   Future<void> checkout() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null || _items.isEmpty) return;
 
-    // Bắt đầu loading
     _isLoading = true;
     notifyListeners();
 
     final firestore = FirebaseFirestore.instance;
 
     try {
-      // Dùng Transaction để an toàn dữ liệu (nhiều người mua cùng lúc)
       await firestore.runTransaction((transaction) async {
-        // A. Kiểm tra tồn kho của TẤT CẢ sản phẩm trước
+
         for (var item in _items.values) {
           final productRef = firestore
               .collection('products')
@@ -103,7 +98,7 @@ class CartController extends ChangeNotifier {
             throw Exception("Sản phẩm '${item.product.name}' không tồn tại!");
           }
 
-          // Lấy tồn kho thực tế trên Server
+
           int currentStock = snapshot.data()!['stock'] ?? 0;
 
           if (currentStock < item.quantity) {
@@ -112,15 +107,12 @@ class CartController extends ChangeNotifier {
             );
           }
 
-          // Trừ kho (Chưa ghi ngay, đợi lệnh cuối cùng)
           int newStock = currentStock - item.quantity;
           transaction.update(productRef, {'stock': newStock});
         }
 
-        // B. Tạo đơn hàng (Sửa lỗi Type Cast ở đây)
         final orderRef = firestore.collection('orders').doc();
 
-        // Chuyển đổi list items sang List<Map<String, dynamic>> rõ ràng
         List<Map<String, dynamic>> orderItems = _items.values.map((item) {
           return {
             'productId': item.product.id,
@@ -133,8 +125,8 @@ class CartController extends ChangeNotifier {
         transaction.set(orderRef, {
           'userId': user.uid,
           'totalAmount': totalAmount,
-          'date': Timestamp.now(), // Dùng date cho khớp với OrderModel
-          'products': orderItems, // Lưu list đã ép kiểu
+          'date': Timestamp.now(), 
+          'products': orderItems, 
         });
       });
 
@@ -154,12 +146,11 @@ class CartController extends ChangeNotifier {
         }
       }
 
-      clearCart(); // Xóa giỏ hàng
+      clearCart(); 
     } catch (e) {
       print("Lỗi thanh toán: $e");
-      rethrow; // Ném lỗi ra ngoài để UI hiển thị thông báo
+      rethrow; 
     } finally {
-      // Tắt loading dù thành công hay thất bại
       _isLoading = false;
       notifyListeners();
     }

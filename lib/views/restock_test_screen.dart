@@ -3,8 +3,7 @@ import 'package:provider/provider.dart';
 import '../controllers/product_controller.dart';
 import '../models/restock_suggestion_model.dart';
 
-/// Widget này dùng để TEST chức năng gợi ý nhập hàng
-/// Hiển thị thông tin chi tiết về cách tính toán
+
 class RestockTestScreen extends StatefulWidget {
   const RestockTestScreen({Key? key}) : super(key: key);
 

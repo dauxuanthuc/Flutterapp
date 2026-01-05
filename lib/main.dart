@@ -26,16 +26,16 @@ import 'views/auth_wrapper.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load biến môi trường
+
   await dotenv.load(fileName: ".env");
 
-  /// 🔴 BẮT LỖI TOÀN APP – RẤT QUAN TRỌNG
+
   FlutterError.onError = (FlutterErrorDetails details) {
     debugPrint('Flutter error: ${details.exception}');
     debugPrintStack(stackTrace: details.stack);
   };
 
-  /// 🔴 BẮT LỖI ZONE - HỖ TRỢ RELEASE MODE
+
   final originalOnError = FlutterError.onError;
   PlatformDispatcher.instance.onError = (error, stack) {
     debugPrint('Zone error: $error');
@@ -43,7 +43,7 @@ void main() async {
     return true;
   };
 
-  /// 🔴 INIT FIREBASE AN TOÀN
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -53,7 +53,7 @@ void main() async {
     debugPrint('❌ Firebase init error: $e');
   }
 
-  /// 🔴 INIT NOTIFICATION AN TOÀN
+
   try {
     await NotificationService.initialize();
     debugPrint('✅ Notification service initialized');
@@ -83,8 +83,7 @@ class MyApp extends StatelessWidget {
         title: 'Online Shop',
         theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: false),
 
-        /// 🔴 KHÔNG DÙNG FirebaseAuth.instance.currentUser!
-        /// 🔴 DÙNG AuthWrapper AN TOÀN
+
         home: const AuthWrapper(),
       ),
     );
